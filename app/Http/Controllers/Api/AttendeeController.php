@@ -15,15 +15,13 @@ class AttendeeController extends Controller
 {
     use CanLoadRelationships;
     private array $relations = ['user'];
-    public function __construct()
-    {
-        Gate::authorizeResource(Attendee::class, 'attendee');
-    }
+
     /**
      * Display a listing of the resource.
      */
     public function index(Event $event)
     {
+        Gate::authorize('viewAny');
         $attendees = $this->loadRelationships(
             $event->attendees()->latest()
         );
@@ -36,6 +34,7 @@ class AttendeeController extends Controller
      */
     public function store(Request $request,Event $event)
     {
+        Gate::authorize('create',auth()->user());
         $attendee = $this->loadRelationships(
             $event->attendees()->create([
                 'user_id' => 1
@@ -50,6 +49,7 @@ class AttendeeController extends Controller
      */
     public function show(Event $event, Attendee $attendee)
     {
+        Gate::authorize('view', $attendee);
         return new AttendeeResource(
             $this->loadRelationships($attendee)
         );
@@ -68,9 +68,7 @@ class AttendeeController extends Controller
      */
     public function destroy(Event $event, Attendee $attendee)
     {
-        if(Gate::denies('delete-attendee',[ $event,$attendee])){
-            abort(403);
-        }
+        Gate::authorize('delete',[ $attendee]);
         $attendee->delete();
         return response(null, 204);
     }
